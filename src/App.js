@@ -23,6 +23,12 @@ import EntryModal from './components/EntryModal';
 import { mainListItems } from './components/listItems';
 import { db, SignInScreen } from './utils/firebase';
 import { emptyEntry } from './utils/mutations';
+import { methods } from './utils/sorting_methods'
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+
 
 // MUI styling constants
 
@@ -105,6 +111,7 @@ export default function App() {
   // Reference video for snapshot functionality https://www.youtube.com/watch?v=ig91zc-ERSE
 
   const [entries, setEntries] = useState([]);
+  const [sort, setSort] = useState(0);
 
   useEffect(() => {
 
@@ -115,26 +122,53 @@ export default function App() {
     an update to the database. This means you do not have to manually update
     the page client-side after making an add/update/delete. The page will automatically
     sync with the database! */
+    
+
     onSnapshot(q, (snapshot) => {
       // Set Entries state variable to the current snapshot
       // For each entry, appends the document ID as an object property along with the existing document data
-      setEntries(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })))
+      setEntries(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
     })
   }, [currentUser]);
 
-  // Main content of homescreen. This is displayed conditionally from user auth status
+  // Comparison function to assist sorting of entries. 
+  // 0 = alphabetical by name, ascending. 1 = alphabetical by name, descending
+  function compare_entries(a, b){
+      if (sort === 0){
+        return a.name.localeCompare(b.name)
+      }
+      else if (sort === 1){
+        return -(a.name.localeCompare(b.name))
+      }
+    };
 
+  // Main content of homescreen. This is displayed conditionally from user auth status
   function mainContent() {
+    
     if (isSignedIn) {
       return (
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Stack direction="row" spacing={3}>
               <EntryModal entry={emptyEntry} type="add" user={currentUser} />
+
+              {/* Button for sorting */}
+              <FormControl sx={{ "margin-top": 20, "width" : 200 }}>
+                  <InputLabel id="demo-simple-select-label">Sort</InputLabel>
+                  <Select
+                     labelId="demo-simple-select-label"
+                     id="demo-simple-select-helper"
+                     value={methods.name}
+                     label="Sort"
+                     onChange={(event) => setSort(event.target.value)}
+                  >
+                     {methods.map((method) => (<MenuItem value={method.id}>{method.name}</MenuItem>))}
+                  </Select>
+               </FormControl>
             </Stack>
           </Grid>
           <Grid item xs={12}>
-            <EntryTable entries={entries} />
+            <EntryTable entries={entries.sort(compare_entries)} />
           </Grid>
         </Grid>
       )

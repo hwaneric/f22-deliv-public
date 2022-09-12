@@ -13,7 +13,7 @@ import TextField from '@mui/material/TextField';
 import * as React from 'react';
 import { useState } from 'react';
 import { categories } from '../utils/categories';
-import { addEntry } from '../utils/mutations';
+import { addEntry, updateEntry, deleteEntry } from '../utils/mutations';
 
 // Modal component for individual entries.
 
@@ -53,23 +53,57 @@ export default function EntryModal({ entry, type, user }) {
    // Mutation handlers
 
    const handleAdd = () => {
-      const newEntry = {
+      const addNewEntry = (newLink) => {      
+         const newEntry = {
+            name: name,
+            link: newLink,
+            description: description,
+            user: user?.displayName,
+            category: category,
+            userid: user?.uid,
+            id: entry.id
+      }
+
+      // Added feature to check if the user's link is valid.
+      addEntry(newEntry).catch(console.error);
+      handleClose();
+      }
+      if (!link.startsWith("www.") && !link.startsWith("https://www.")){
+         alert("Your link is not a valid link")
+      }
+      else if (link.startsWith("www.")){
+         setLink('https://' + link)
+         alert("You forgot https:// at the start of your link")
+         addNewEntry('https://' + link)
+      }
+      else{
+         addNewEntry(link)
+      }
+   };      
+
+
+   // TODO: Add Edit Mutation Handler
+   const handleUpdate = () => {
+      const updatedEntry = {
          name: name,
          link: link,
          description: description,
          user: user?.displayName,
          category: category,
          userid: user?.uid,
+         id: entry.id
       };
 
-      addEntry(newEntry).catch(console.error);
+      updateEntry(updatedEntry).catch(console.error);
       handleClose();
    };
 
-   // TODO: Add Edit Mutation Handler
-
    // TODO: Add Delete Mutation Handler
-
+   const handleDelete = () => {
+      if (window.confirm("Would you like to delete this entry? This action is not reversable.")){
+      deleteEntry(entry).catch(console.error);
+      }
+   };
    // Button handlers for modal opening and inside-modal actions.
    // These buttons are displayed conditionally based on if adding or editing/opening.
    // TODO: You may have to edit these buttons to implement editing/deleting functionality.
@@ -87,6 +121,8 @@ export default function EntryModal({ entry, type, user }) {
       type === "edit" ?
          <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
+            <Button onClick={handleUpdate}>Update</Button>
+            <Button onClick={handleDelete} variant="contained" color="error">Delete</Button>
          </DialogActions>
          : type === "add" ?
             <DialogActions>
